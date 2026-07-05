@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Kitchen Management Pro</title>
+    <style>
+        :root {
+            --primary: #0f172a; --accent: #2563eb; --success: #10b981; --danger: #ef4444;
+            --warning: #f59e0b; --bg: #f8fafc; --card: #ffffff; --text: #0f172a;
+            --muted: #64748b; --border: #e2e8f0; --radius: 16px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg); color: var(--text); margin: 0; padding: 0;
+            display: flex; justify-content: center; height: 100vh; overflow: hidden;
+        }
+
+        .app-shell { width: 100%; max-width: 500px; height: 100%; background: var(--bg); display: flex; flex-direction: column; position: relative; }
+
+        .view { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding: 20px 20px 100px 20px; }
+        .view.active { display: flex; animation: fadeIn 0.15s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .bottom-nav {
+            position: absolute; bottom: 0; width: 100%; height: 75px;
+            background: white; border-top: 1px solid var(--border);
+            display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom);
+        }
+        .nav-btn { border: none; background: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 600; flex: 1; }
+        .nav-btn.active { color: var(--accent); }
+        .nav-btn svg { width: 22px; height: 22px; margin-bottom: 4px; }
+
+        .card { background: var(--card); padding: 16px; border-radius: var(--radius); box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 12px; border: 1px solid var(--border); position: relative;}
+        .card:active { background: #fdfdfd; }
+        
+        h1 { font-size: 24px; font-weight: 800; margin: 0 0 20px 0; }
+        h3 { margin: 10px 0; font-size: 18px; }
+        
+        label { display: block; font-size: 11px; font-weight: 800; color: var(--muted); margin: 12px 0 4px 4px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: #fcfcfc; font-size: 16px; outline: none; }
+        input:focus { border-color: var(--accent); background: white; }
+        
+        .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-accent { background: var(--accent); color: white; }
+        .btn-danger { background: #fee2e2; color: var(--danger); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-small { padding: 8px 12px; font-size: 12px; width: auto; border-radius: 8px; }
+
+        .allergen-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .allergen-tag { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); font-size: 12px; cursor: pointer; background: white; }
+        .allergen-tag.selected { background: var(--danger); color: white; border-color: var(--danger); }
+
+        .list-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; margin-right: 4px; font-weight: bold; }
+        
+        .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin: 10px 0; }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: 0.3s; }
+        .big-input { font-size: 60px; font-weight: 800; text-align: center; border: none; border-bottom: 4px solid var(--border); border-radius: 0; color: var(--accent); width: 100%; }
+
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 10px 20px; border-radius: 30px; display: none; z-index: 1000; font-weight: bold; }
+        .clickable { cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="toast">Copied!</div>
+
+<div class="app-shell">
+    
+    <!-- DASHBOARD -->
+    <section id="view-home" class="view active">
+        <h1>Kitchen Dashboard</h1>
+        <div class="card clickable" onclick="startInventory()" style="background: linear-gradient(135deg, var(--accent), #1d4ed8); color: white; padding: 30px 20px; border: none;">
+            <h2 style="margin:0">Start Inventory</h2>
+            <p style="opacity: 0.9; margin: 5px 0 0 0;">Check stock & shortages</p>
+        </div>
+        <h3>Inventory History</h3>
+        <div id="home-history"></div>
+    </section>
+
+    <!-- MASTER LIST -->
+    <section id="view-master" class="view">
+        <h1>Add Ingredient</h1>
+        <div class="card">
+            <label>Item Name</label>
+            <input type="text" id="ing-name" placeholder="">
+            <div style="display:flex; gap:8px">
+                <div style="flex:1">
+                    <label>Package Size</label>
+                    <input type="number" id="ing-size" placeholder="">
+                </div>
+                <div style="flex:1">
+                    <label>Unit</label>
+                    <select id="ing-unit">
+                        <option value="kg">kg</option><option value="L">L</option><option value="pcs">pcs</option><option value="pack">pack</option>
+                    </select>
+                </div>
+            </div>
+            <label>Package Price ($)</label>
+            <input type="number" id="ing-price" placeholder="">
+            <label>Min Par Level</label>
+            <input type="number" id="ing-par" placeholder="">
+            
+            <label>Select Allergens</label>
+            <div class="allergen-wrap" id="allergen-picker"></div>
+            
+            <button class="btn btn-accent" style="margin-top:20px" onclick="addIngredient()">Save Ingredient</button>
+        </div>
+        <div id="master-items-list"></div>
+    </section>
+
+    <!-- COSTING LIST -->
+    <section id="view-costing" class="view">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+            <h1>Recipe Costing</h1>
+            <button class="btn-accent btn-small" onclick="openRecipeEditor()">+ New Recipe</button>
+        </div>
+        <div id="recipe-list"></div>
+    </section>
+
+    <!-- RECIPE EDITOR -->
+    <section id="view-recipe-editor" class="view">
+        <h1 id="recipe-editor-title">Recipe Editor</h1>
+        <div class="card">
+            <label>Recipe Name</label>
+            <input type="text" id="rec-name" placeholder="">
+            
+            <div style="display:flex; gap:8px">
+                <div style="flex:1">
+                    <label>Total Yield (Portions/Ltrs)</label>
+                    <input type="number" id="rec-yield" placeholder="1.0">
+                </div>
+                <div style="flex:1">
+                    <label>Sub-Recipe?</label>
+                    <select id="rec-is-sub" onchange="toggleSalePrice()"><option value="no">No</option><option value="yes">Yes</option></select>
+                </div>
+            </div>
+
+            <div id="sale-price-wrap">
+                <label>Selling Price per Portion ($)</label>
+                <input type="number" id="rec-sale" placeholder="">
+            </div>
+
+            <h4 style="margin: 25px 0 10px 0">Ingredients & Components</h4>
+            <div id="recipe-ing-list" style="margin-bottom:15px; border-top: 1px solid #eee;"></div>
+
+            <div style="background:#f8fafc; padding:15px; border-radius:12px; border: 1px dashed #cbd5e1">
+                <label>Add Item</label>
+                <select id="rec-ing-select"><option value="">-- Choose --</option></select>
+                <label>Amount Needed</label>
+                <input type="number" id="rec-ing-qty" placeholder="">
+                <button class="btn btn-outline" style="margin-top:10px" onclick="addIngToRecipe()">Add Ingredient</button>
+            </div>
+        </div>
+        <button class="btn btn-accent" onclick="saveRecipe()">Save Full Recipe</button>
+        <button class="btn btn-outline" style="margin-top:10px" onclick="showView('costing')">Cancel</button>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="view-settings" class="view">
+        <h1>Settings</h1>
+        <div class="card">
+            <label>Target Food Cost %</label>
+            <input type="number" id="setting-target-fc" value="30" onchange="updateSettings()">
+        </div>
+
+        <div class="card">
+            <h3>Manage Allergens</h3>
+            <div style="display:flex; gap:5px; margin-bottom:15px">
+                <input type="text" id="new-allergen-input" style="margin:0" placeholder="e.g. Nuts">
+                <button class="btn btn-accent btn-small" onclick="addNewAllergen()">Add</button>
+            </div>
+            <div id="settings-allergen-list" class="allergen-wrap"></div>
+        </div>
+
+        <button class="btn btn-danger" onclick="secureWipe()">Wipe All Data</button>
+    </section>
+
+    <!-- INVENTORY COUNTING -->
+    <section id="view-counting" class="view">
+        <div class="progress-bar"><div id="count-progress" class="progress-fill"></div></div>
+        <p id="count-index" style="text-align:center; font-weight:800; font-size:12px; color:var(--muted)"></p>
+
+        <div class="card" style="text-align:center; padding: 50px 20px;">
+            <p id="count-unit-label" style="text-transform:uppercase; color:var(--accent); font-weight:800;"></p>
+            <h1 id="count-name" style="font-size:36px;">Item</h1>
+            <input type="number" id="count-input" class="big-input" inputmode="decimal" placeholder="0">
+        </div>
+        <button class="btn btn-accent" onclick="nextCount()">Next Item</button>
+    </section>
+
+    <!-- REPORT / DETAIL VIEW -->
+    <section id="view-report" class="view">
+        <h1 id="report-title">Shortages</h1>
+        <div id="report-container" style="flex:1"></div>
+        <button class="btn btn-accent" onclick="copyReport()">Copy Report</button>
+        <button class="btn btn-outline" style="margin-top:10px" onclick="showView('home')">Back Home</button>
+    </section>
+
+    <!-- NAV -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" onclick="showView('home', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Home</button>
+        <button class="nav-btn" onclick="showView('costing', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Costing</button>
+        <button class="nav-btn" onclick="showView('master', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Master</button>
+        <button class="nav-btn" onclick="showView('settings', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
+    </nav>
+</div>
+
+<script>
+    // --- DATABASE ---
+    let db = {
+        ings: JSON.parse(localStorage.getItem('k_ings')) || [],
+        recs: JSON.parse(localStorage.getItem('k_recs')) || [],
+        hist: JSON.parse(localStorage.getItem('k_hist')) || [],
+        allergens: JSON.parse(localStorage.getItem('k_aller')) || ["Dairy", "Gluten", "Nuts", "Eggs", "Shellfish", "Soy"],
+        settings: JSON.parse(localStorage.getItem('k_set')) || { targetFC: 30 }
+    };
+
+    let selectedAllergens = new Set();
+    let tempRecipeIngs = [];
+    let invState = { index: 0, items: [] };
+    let editingRecipeId = null;
+
+    // --- NAVIGATION ---
+    function showView(id, btn) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-' + id).classList.add('active');
+        if(btn) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        if(id === 'master') renderMaster();
+        if(id === 'costing') renderRecipes();
+        if(id === 'home') renderHome();
+        if(id === 'settings') renderSettings();
+    }
+
+    // --- MASTER LIST ---
+    function renderMaster() {
+        initAllergenPicker();
+        const list = document.getElementById('master-items-list');
+        list.innerHTML = '<h3>Master Inventory</h3>';
+        db.ings.sort((a,b) => a.name.localeCompare(b.name)).forEach(i => {
+            list.innerHTML += `
+                <div class="card">
+                    <div class="list-row"><strong>${i.name}</strong><button onclick="deleteIng(${i.id})" style="border:none;background:none;color:var(--danger)">✕</button></div>
+                    <div style="font-size:12px; color:var(--muted)">$${i.price} / ${i.size}${i.unit} ($${(i.price/i.size).toFixed(2)} unit)</div>
+                    <div class="allergen-wrap">${i.allergens.map(a => `<span class="tag">${a}</span>`).join('')}</div>
+                </div>`;
+        });
+    }
+
+    function initAllergenPicker() {
+        const wrap = document.getElementById('allergen-picker');
+        wrap.innerHTML = '';
+        db.allergens.forEach(a => {
+            const div = document.createElement('div');
+            div.className = `allergen-tag ${selectedAllergens.has(a) ? 'selected' : ''}`;
+            div.innerText = a;
+            div.onclick = () => {
+                selectedAllergens.has(a) ? selectedAllergens.delete(a) : selectedAllergens.add(a);
+                initAllergenPicker();
+            };
+            wrap.appendChild(div);
+        });
+    }
+
+    function addIngredient() {
+        const name = document.getElementById('ing-name').value;
+        const size = parseFloat(document.getElementById('ing-size').value);
+        const price = parseFloat(document.getElementById('ing-price').value);
+        const unit = document.getElementById('ing-unit').value;
+        const par = parseFloat(document.getElementById('ing-par').value);
+
+        if(!name || isNaN(size) || isNaN(price)) return;
+
+        db.ings.push({ id: Date.now(), name, size, price, unit, par, allergens: Array.from(selectedAllergens) });
+        localStorage.setItem('k_ings', JSON.stringify(db.ings));
+        
+        document.getElementById('ing-name').value = '';
+        document.getElementById('ing-size').value = '';
+        document.getElementById('ing-price').value = '';
+        document.getElementById('ing-par').value = '';
+        selectedAllergens.clear();
+        renderMaster();
+    }
+
+    function deleteIng(id) {
+        db.ings = db.ings.filter(i => i.id !== id);
+        localStorage.setItem('k_ings', JSON.stringify(db.ings));
+        renderMaster();
+    }
+
+    // --- RECIPE COSTING & EDITING ---
+    function toggleSalePrice() {
+        document.getElementById('sale-price-wrap').style.display = document.getElementById('rec-is-sub').value === 'yes' ? 'none' : 'block';
+    }
+
+    function openRecipeEditor(id = null) {
+        editingRecipeId = id;
+        populateRecipeSelector();
+        
+        if (id) {
+            const r = db.recs.find(recipe => recipe.id === id);
+            document.getElementById('recipe-editor-title').innerText = "Edit Recipe";
+            document.getElementById('rec-name').value = r.name;
+            document.getElementById('rec-yield').value = r.yield;
+            document.getElementById('rec-is-sub').value = r.isSub ? 'yes' : 'no';
+            document.getElementById('rec-sale').value = r.sale || '';
+            tempRecipeIngs = [...r.components];
+        } else {
+            document.getElementById('recipe-editor-title').innerText = "New Recipe";
+            document.getElementById('rec-name').value = '';
+            document.getElementById('rec-yield').value = '';
+            document.getElementById('rec-sale').value = '';
+            document.getElementById('rec-is-sub').value = 'no';
+            tempRecipeIngs = [];
+        }
+        
+        toggleSalePrice();
+        renderRecipeIngs();
+        showView('recipe-editor');
+    }
+
+    function populateRecipeSelector() {
+        const sel = document.getElementById('rec-ing-select');
+        sel.innerHTML = '<option value="">-- Choose Item --</option>';
+        db.ings.sort((a,b) => a.name.localeCompare(b.name)).forEach(i => sel.innerHTML += `<option value="ing|${i.id}">${i.name} (Ing)</option>`);
+        db.recs.filter(r => r.isSub).sort((a,b) => a.name.localeCompare(b.name)).forEach(r => sel.innerHTML += `<option value="rec|${r.id}">${r.name} (Sub)</option>`);
+    }
+
+    function addIngToRecipe() {
+        const sel = document.getElementById('rec-ing-select').value;
+        const qty = parseFloat(document.getElementById('rec-ing-qty').value);
+        if(!sel || isNaN(qty)) return;
+
+        const [type, id] = sel.split('|');
+        const item = (type === 'ing') ? db.ings.find(i => i.id == id) : db.recs.find(r => r.id == id);
+
+        tempRecipeIngs.push({ type, id, qty, name: item.name });
+        
+        document.getElementById('rec-ing-select').selectedIndex = 0;
+        document.getElementById('rec-ing-qty').value = '';
+        renderRecipeIngs();
+    }
+
+    function renderRecipeIngs() {
+        const list = document.getElementById('recipe-ing-list');
+        list.innerHTML = '';
+        tempRecipeIngs.forEach((item, idx) => {
+            list.innerHTML += `<div class="list-row"><span>${item.name} (${item.qty})</span><button onclick="tempRecipeIngs.splice(${idx},1);renderRecipeIngs()" style="color:var(--danger);border:none;background:none">✕</button></div>`;
+        });
+    }
+
+    function calcCost(components) {
+        return components.reduce((sum, item) => {
+            if(item.type === 'ing') {
+                const ing = db.ings.find(i => i.id == item.id);
+                return sum + (ing ? (ing.price/ing.size) * item.qty : 0);
+            } else {
+                const sub = db.recs.find(r => r.id == item.id);
+                const subYield = sub.yield || 1;
+                return sum + (sub ? (calcCost(sub.components) / subYield) * item.qty : 0);
+            }
+        }, 0);
+    }
+
+    function saveRecipe() {
+        const name = document.getElementById('rec-name').value;
+        const yieldVal = parseFloat(document.getElementById('rec-yield').value) || 1;
+        const isSub = document.getElementById('rec-is-sub').value === 'yes';
+        const sale = isSub ? 0 : parseFloat(document.getElementById('rec-sale').value);
+
+        if(!name || tempRecipeIngs.length === 0) return alert("Missing Info");
+
+        const recipeData = { id: editingRecipeId || Date.now(), name, yield: yieldVal, isSub, sale, components: [...tempRecipeIngs] };
+
+        if (editingRecipeId) {
+            const index = db.recs.findIndex(r => r.id === editingRecipeId);
+            db.recs[index] = recipeData;
+        } else {
+            db.recs.push(recipeData);
+        }
+        
+        localStorage.setItem('k_recs', JSON.stringify(db.recs));
+        showView('costing');
+    }
+
+    function renderRecipes() {
+        const list = document.getElementById('recipe-list');
+        list.innerHTML = '';
+        db.recs.sort((a,b) => a.name.localeCompare(b.name)).forEach(r => {
+            const totalCost = calcCost(r.components);
+            const costPerUnit = totalCost / (r.yield || 1);
+            const fc = r.sale > 0 ? ((costPerUnit / r.sale) * 100).toFixed(1) : 'N/A';
+            const isHigh = r.sale > 0 && parseFloat(fc) > db.settings.targetFC;
+
+            list.innerHTML += `
+                <div class="card clickable" onclick="openRecipeEditor(${r.id})" style="border-left: 5px solid ${r.isSub ? '#94a3b8' : (isHigh ? 'var(--danger)' : 'var(--success)')}">
+                    <div class="list-row"><strong>${r.name}</strong><button onclick="event.stopPropagation(); deleteRec(${r.id})" style="border:none;background:none;color:var(--danger)">✕</button></div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-top:5px">
+                        <span>Cost/$: ${costPerUnit.toFixed(2)}</span>
+                        ${r.isSub ? '<span>(Sub-Recipe)</span>' : `<span>FC: ${fc}%</span>`}
+                    </div>
+                </div>`;
+        });
+    }
+
+    function deleteRec(id) {
+        db.recs = db.recs.filter(r => r.id !== id);
+        localStorage.setItem('k_recs', JSON.stringify(db.recs));
+        renderRecipes();
+    }
+
+    // --- SETTINGS ---
+    function renderSettings() {
+        document.getElementById('setting-target-fc').value = db.settings.targetFC;
+        const list = document.getElementById('settings-allergen-list');
+        list.innerHTML = '';
+        db.allergens.forEach((a, idx) => {
+            list.innerHTML += `<div class="allergen-tag selected" onclick="removeAllergen(${idx})">${a} ✕</div>`;
+        });
+    }
+
+    function addNewAllergen() {
+        const val = document.getElementById('new-allergen-input').value.trim();
+        if(val) {
+            db.allergens.push(val);
+            localStorage.setItem('k_aller', JSON.stringify(db.allergens));
+            document.getElementById('new-allergen-input').value = '';
+            renderSettings();
+        }
+    }
+
+    function removeAllergen(idx) {
+        db.allergens.splice(idx, 1);
+        localStorage.setItem('k_aller', JSON.stringify(db.allergens));
+        renderSettings();
+    }
+
+    function secureWipe() {
+        const pass = prompt("Enter Passcode to Wipe Data:");
+        if(pass === "2001") {
+            localStorage.clear();
+            location.reload();
+        } else {
+            alert("Incorrect Passcode");
+        }
+    }
+
+    function updateSettings() {
+        db.settings.targetFC = parseFloat(document.getElementById('setting-target-fc').value);
+        localStorage.setItem('k_set', JSON.stringify(db.settings));
+    }
+
+    // --- INVENTORY ENGINE ---
+    function startInventory() {
+        if(db.ings.length === 0) return alert("List is empty");
+        invState.items = db.ings.map(i => ({...i, count: 0}));
+        invState.index = 0;
+        showView('counting');
+        renderCountStep();
+    }
+
+    function renderCountStep() {
+        const item = invState.items[invState.index];
+        const pct = ((invState.index) / invState.items.length) * 100;
+        document.getElementById('count-progress').style.width = pct + '%';
+        document.getElementById('count-index').innerText = `Item ${invState.index+1} of ${invState.items.length}`;
+        document.getElementById('count-name').innerText = item.name;
+        document.getElementById('count-unit-label').innerText = item.unit;
+        document.getElementById('count-input').value = '';
+        document.getElementById('count-input').focus();
+    }
+
+    function nextCount() {
+        invState.items[invState.index].count = parseFloat(document.getElementById('count-input').value) || 0;
+        if(invState.index < invState.items.length - 1) {
+            invState.index++;
+            renderCountStep();
+        } else {
+            const reportItems = invState.items.map(i => ({
+                name: i.name,
+                count: i.count,
+                par: i.par,
+                unit: i.unit
+            }));
+            const report = { date: new Date().toLocaleString(), items: reportItems };
+            db.hist.unshift(report);
+            localStorage.setItem('k_hist', JSON.stringify(db.hist.slice(0,20)));
+            renderReport(0);
+        }
+    }
+
+    function renderReport(historyIndex) {
+        const report = db.hist[historyIndex];
+        const cont = document.getElementById('report-container');
+        document.getElementById('report-title').innerText = "Report: " + report.date.split(',')[0];
+        
+        const shortages = report.items.filter(i => i.count < i.par);
+        
+        if(!shortages.length) {
+            cont.innerHTML = "<p style='text-align:center; margin-top:50px'>No shortages found!</p>";
+        } else {
+            cont.innerHTML = shortages.map(s => `
+                <div class="card" style="border-left: 5px solid var(--danger)">
+                    <strong>${s.name}</strong><br>
+                    Stock: ${s.count} / Par: ${s.par}<br>
+                    <span style="color:var(--danger); font-weight:700">Order: ${(s.par-s.count).toFixed(1)} ${s.unit}</span>
+                </div>`).join('');
+        }
+        
+        showView('report');
+    }
+
+    function renderHome() {
+        const hist = document.getElementById('home-history');
+        hist.innerHTML = db.hist.length ? '' : '<p style="color:var(--muted)">No history yet.</p>';
+        db.hist.forEach((h, idx) => {
+            const shortages = h.items.filter(i => i.count < i.par).length;
+            hist.innerHTML += `
+                <div class="card clickable" onclick="renderReport(${idx})">
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                        <strong>${h.date}</strong>
+                        <span class="tag" style="background:${shortages > 0 ? '#fee2e2' : '#d1fae5'}">${shortages} Shortages</span>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function copyReport() {
+        const title = document.getElementById('report-title').innerText;
+        const items = document.querySelectorAll('#report-container .card');
+        if(!items.length) return alert("Nothing to copy");
+        
+        let txt = "KITCHEN " + title.toUpperCase() + "\n";
+        items.forEach(card => {
+            const name = card.querySelector('strong').innerText;
+            const order = card.querySelector('span').innerText;
+            txt += `• ${name}: ${order}\n`;
+        });
+        
+        navigator.clipboard.writeText(txt);
+        const t = document.getElementById('toast'); t.style.display='block'; setTimeout(()=>t.style.display='none', 2000);
+    }
+
+    window.onload = renderHome;
+</script>
+
+</body>
+</html>
