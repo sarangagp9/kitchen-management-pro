@@ -1,87 +1,64 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kitchen Management Pro</title>
+    <title>Kitchen Pro</title>
     <style>
         :root {
             --primary: #0f172a; --accent: #2563eb; --success: #10b981; --danger: #ef4444;
-            --warning: #f59e0b; --bg: #f8fafc; --card: #ffffff; --text: #0f172a;
+            --bg: #f8fafc; --card: #ffffff; --text: #0f172a;
             --muted: #64748b; --border: #e2e8f0; --radius: 16px;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg); color: var(--text); margin: 0; padding: 0;
-            display: flex; justify-content: center; 
-            /* Fix for mobile height */
-            height: 100vh; height: 100dvh; 
-            overflow: hidden;
-        }
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: var(--bg); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; }
 
-        .app-shell { 
-            width: 100%; max-width: 500px; height: 100%; 
-            background: var(--bg); display: flex; flex-direction: column; 
-            position: relative; 
-        }
+        .app-shell { width: 100%; max-width: 500px; height: 100dvh; display: flex; flex-direction: column; background: var(--bg); position: relative; }
 
-        .view { 
-            display: none; flex-direction: column; height: 100%; 
-            overflow-y: auto; 
-            /* Increase bottom padding so content doesn't hide behind buttons */
-            padding: 20px 20px 120px 20px; 
-        }
+        .content-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 20px 40px 20px; }
+        .view { display: none; flex-direction: column; }
         .view.active { display: flex; animation: fadeIn 0.15s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* FIXED NAVIGATION FIX */
-        .bottom-nav {
-            position: fixed; 
-            bottom: 0; 
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%; 
-            max-width: 500px; /* Match app shell */
-            height: 80px;
-            background: white; 
-            border-top: 1px solid var(--border);
-            display: flex; 
-            justify-content: space-around; 
-            align-items: center; 
-            padding-bottom: env(safe-area-inset-bottom);
-            z-index: 9999;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-        }
-
-        .nav-btn { border: none; background: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 600; flex: 1; height: 100%; justify-content: center; }
+        .bottom-nav { flex-shrink: 0; background: white; border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; padding-top: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 12px rgba(0,0,0,0.03); z-index: 100; }
+        .nav-btn { border: none; background: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 600; flex: 1; cursor: pointer; }
         .nav-btn.active { color: var(--accent); }
         .nav-btn svg { width: 24px; height: 24px; margin-bottom: 4px; }
 
-        /* Rest of the UI */
-        .card { background: var(--card); padding: 16px; border-radius: var(--radius); box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 12px; border: 1px solid var(--border); position: relative;}
+        .card { background: var(--card); padding: 16px; border-radius: var(--radius); box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 12px; border: 1px solid var(--border); }
         h1 { font-size: 24px; font-weight: 800; margin: 0 0 20px 0; }
         h3 { margin: 10px 0; font-size: 18px; }
+        
         label { display: block; font-size: 11px; font-weight: 800; color: var(--muted); margin: 12px 0 4px 4px; text-transform: uppercase; }
-        input, select { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: #fcfcfc; font-size: 16px; outline: none; }
+        input, select, textarea { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: #fcfcfc; font-size: 16px; outline: none; font-family: inherit; }
+        input:focus { border-color: var(--accent); background: white; }
+
+        .search-bar { margin-bottom: 15px; border: 2px solid var(--accent); background: white; }
+
+        .autocomplete-container { position: relative; }
+        .autocomplete-results { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--border); border-radius: 12px; z-index: 1000; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none; }
+        .autocomplete-item { padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
+        .autocomplete-item:active { background: #f1f5f9; }
+
         .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-accent { background: var(--accent); color: white; }
         .btn-danger { background: #fee2e2; color: var(--danger); }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
         .btn-small { padding: 8px 12px; font-size: 12px; width: auto; border-radius: 8px; }
+
         .allergen-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
         .allergen-tag { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); font-size: 12px; cursor: pointer; background: white; }
         .allergen-tag.selected { background: var(--danger); color: white; border-color: var(--danger); }
-        .list-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
         .tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; margin-right: 4px; font-weight: bold; }
+        
+        .list-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
         .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin: 10px 0; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: 0.3s; }
         .big-input { font-size: 60px; font-weight: 800; text-align: center; border: none; border-bottom: 4px solid var(--border); border-radius: 0; color: var(--accent); width: 100%; }
         #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 10px 20px; border-radius: 30px; display: none; z-index: 10000; font-weight: bold; }
         .clickable { cursor: pointer; }
+        .del-icon { color: var(--danger); font-size: 18px; border: none; background: none; padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -89,99 +66,139 @@
 <div id="toast">Copied!</div>
 
 <div class="app-shell">
-    
-    <!-- HOME VIEW -->
-    <section id="view-home" class="view active">
-        <h1>Kitchen Dashboard</h1>
-        <div class="card clickable" onclick="startInventory()" style="background: linear-gradient(135deg, var(--accent), #1d4ed8); color: white; padding: 30px 20px; border: none;">
-            <h2 style="margin:0">Start Inventory</h2>
-            <p style="opacity: 0.9; margin: 5px 0 0 0;">Check stock & shortages</p>
-        </div>
-        <h3>Inventory History</h3>
-        <div id="home-history"></div>
-    </section>
-
-    <!-- MASTER LIST -->
-    <section id="view-master" class="view">
-        <h1>Add Ingredient</h1>
-        <div class="card">
-            <label>Item Name</label><input type="text" id="ing-name">
-            <div style="display:flex; gap:8px">
-                <div style="flex:1"><label>Size</label><input type="number" id="ing-size"></div>
-                <div style="flex:1"><label>Unit</label><select id="ing-unit"><option value="kg">kg</option><option value="L">L</option><option value="pcs">pcs</option></select></div>
+    <div class="content-area" id="main-scroller">
+        
+        <!-- HOME DASHBOARD -->
+        <section id="view-home" class="view active">
+            <h1>Kitchen Dashboard</h1>
+            <div class="card clickable" onclick="startInventory()" style="background: linear-gradient(135deg, var(--accent), #1d4ed8); color: white; padding: 30px 20px; border: none;">
+                <h2 style="margin:0">Start Inventory</h2>
+                <p style="opacity: 0.9; margin: 5px 0 0 0;">Check stock & shortages</p>
             </div>
-            <label>Price ($)</label><input type="number" id="ing-price">
-            <label>Min Par</label><input type="number" id="ing-par">
-            <label>Allergens</label><div class="allergen-wrap" id="allergen-picker"></div>
-            <button class="btn btn-accent" style="margin-top:20px" onclick="addIngredient()">Save Ingredient</button>
-        </div>
-        <div id="master-items-list"></div>
-    </section>
+            <h3>Inventory History</h3>
+            <div id="home-history"></div>
+        </section>
 
-    <!-- COSTING VIEW -->
-    <section id="view-costing" class="view">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
-            <h1>Costing</h1><button class="btn-accent btn-small" onclick="openRecipeEditor()">+ New</button>
-        </div>
-        <div id="recipe-list"></div>
-    </section>
-
-    <!-- RECIPE EDITOR -->
-    <section id="view-recipe-editor" class="view">
-        <h1 id="recipe-editor-title">Recipe Editor</h1>
-        <div class="card">
-            <label>Name</label><input type="text" id="rec-name">
-            <div style="display:flex; gap:8px">
-                <div style="flex:1"><label>Yield</label><input type="number" id="rec-yield"></div>
-                <div style="flex:1"><label>Sub?</label><select id="rec-is-sub" onchange="toggleSalePrice()"><option value="no">No</option><option value="yes">Yes</option></select></div>
+        <!-- MASTER LIST -->
+        <section id="view-master" class="view">
+            <h1 id="master-title">Master List</h1>
+            <div class="card">
+                <label>Item Name</label>
+                <input type="text" id="ing-name" placeholder="">
+                <div style="display:flex; gap:8px">
+                    <div style="flex:1"><label>Size</label><input type="number" id="ing-size" placeholder=""></div>
+                    <div style="flex:1"><label>Unit</label><select id="ing-unit"><option value="kg">kg</option><option value="L">L</option><option value="pcs">pcs</option></select></div>
+                </div>
+                <label>Price ($)</label><input type="number" id="ing-price" placeholder="">
+                <label>Min Par</label><input type="number" id="ing-par" placeholder="">
+                <label>Allergens</label><div class="allergen-wrap" id="allergen-picker"></div>
+                <div style="display:flex; gap:10px; margin-top:20px">
+                    <button class="btn btn-accent" id="btn-ing-save" onclick="addIngredient()">Save Ingredient</button>
+                    <button class="btn btn-outline" id="btn-ing-cancel" style="display:none" onclick="cancelIngEdit()">Cancel</button>
+                </div>
             </div>
-            <div id="sale-price-wrap"><label>Price ($)</label><input type="number" id="rec-sale"></div>
-            <h4 style="margin:20px 0 10px 0">Ingredients</h4>
-            <div id="recipe-ing-list"></div>
-            <div style="background:#f8fafc; padding:15px; border-radius:12px; border:1px dashed #ddd">
-                <select id="rec-ing-select"></select>
-                <input type="number" id="rec-ing-qty" placeholder="Qty">
-                <button class="btn btn-outline" style="margin-top:10px" onclick="addIngToRecipe()">Add Item</button>
+            <h3>Search Ingredients</h3>
+            <input type="text" class="search-bar" id="master-search" placeholder="🔍 Type ingredient name..." onkeyup="renderMaster()">
+            <div id="master-items-list"></div>
+        </section>
+
+        <!-- RECIPE VIEW -->
+        <section id="view-recipe" class="view">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+                <h1>Recipe Page</h1>
+                <button class="btn-accent btn-small" onclick="openRecipeEditor()">+ New Recipe</button>
             </div>
-        </div>
-        <button class="btn btn-accent" onclick="saveRecipe()">Save Recipe</button>
-        <button class="btn btn-outline" style="margin-top:10px" onclick="showView('costing')">Cancel</button>
-    </section>
+            <input type="text" class="search-bar" id="recipe-search" placeholder="🔍 Search recipes..." onkeyup="renderRecipes()">
+            <div id="recipe-list"></div>
+        </section>
 
-    <!-- SETTINGS -->
-    <section id="view-settings" class="view">
-        <h1>Settings</h1>
-        <div class="card"><label>Target Food Cost %</label><input type="number" id="setting-target-fc" value="30" onchange="updateSettings()"></div>
-        <div class="card"><h3>Allergens</h3><div style="display:flex; gap:5px; margin-bottom:10px"><input type="text" id="new-allergen-input"><button class="btn btn-accent btn-small" onclick="addNewAllergen()">Add</button></div><div id="settings-allergen-list" class="allergen-wrap"></div></div>
-        <button class="btn btn-danger" onclick="secureWipe()">Wipe Data (2001)</button>
-    </section>
+        <!-- RECIPE EDITOR -->
+        <section id="view-recipe-editor" class="view">
+            <h1 id="recipe-editor-title">Recipe Editor</h1>
+            <div class="card">
+                <label>Recipe Name</label><input type="text" id="rec-name">
+                <div style="display:flex; gap:8px">
+                    <div style="flex:1"><label>Yield</label><input type="number" id="rec-yield"></div>
+                    <div style="flex:1"><label>Sub-Recipe?</label><select id="rec-is-sub" onchange="toggleSalePrice()"><option value="no">No</option><option value="yes">Yes</option></select></div>
+                </div>
+                <div id="sale-price-wrap"><label>Sale Price ($)</label><input type="number" id="rec-sale"></div>
+                
+                <label>Preparation Method</label>
+                <textarea id="rec-prep" rows="4" placeholder="How to prepare this dish..."></textarea>
 
-    <!-- COUNTING -->
-    <section id="view-counting" class="view">
-        <div class="progress-bar"><div id="count-progress" class="progress-fill"></div></div>
-        <p id="count-index" style="text-align:center; font-weight:800;"></p>
-        <div class="card" style="text-align:center; padding: 50px 20px;">
-            <p id="count-unit-label" style="text-transform:uppercase; color:var(--accent); font-weight:800;"></p>
-            <h1 id="count-name" style="font-size:32px;">Item</h1>
-            <input type="number" id="count-input" class="big-input" inputmode="decimal" placeholder="0">
-        </div>
-        <button class="btn btn-accent" onclick="nextCount()">Next</button>
-    </section>
+                <h4 style="margin:20px 0 10px 0">Ingredients & Components</h4>
+                <div id="recipe-ing-list"></div>
+                
+                <div style="background:#f8fafc; padding:15px; border-radius:12px; border:1px dashed #ddd; margin-top:10px">
+                    <label>Search Ingredient/Sub-Recipe</label>
+                    <div class="autocomplete-container">
+                        <input type="text" id="rec-ing-search" placeholder="Type to search..." onkeyup="handleAutocomplete(this)">
+                        <div id="autocomplete-results" class="autocomplete-results"></div>
+                        <input type="hidden" id="rec-ing-selected-val">
+                    </div>
+                    <label>Amount needed</label>
+                    <input type="number" id="rec-ing-qty" placeholder="">
+                    <button class="btn btn-outline" style="margin-top:10px" onclick="addIngToRecipe()">Add to Recipe</button>
+                </div>
+            </div>
+            <button class="btn btn-accent" onclick="saveRecipe()">Save Recipe</button>
+            <button class="btn btn-outline" style="margin-top:10px" onclick="showView('recipe')">Cancel</button>
+        </section>
 
-    <!-- REPORT -->
-    <section id="view-report" class="view">
-        <h1 id="report-title">Report</h1>
-        <div id="report-container" style="flex:1"></div>
-        <button class="btn btn-accent" onclick="copyReport()">Copy Report</button>
-        <button class="btn btn-outline" style="margin-top:10px" onclick="showView('home')">Home</button>
-    </section>
+        <!-- SETTINGS -->
+        <section id="view-settings" class="view">
+            <h1>Settings</h1>
+            <div class="card"><label>Target Food Cost %</label><input type="number" id="setting-target-fc" value="30" onchange="updateSettings()"></div>
+            
+            <div class="card">
+                <h3>Data Export</h3>
+                <label>Enter Passcode to Export CSV</label>
+                <input type="password" id="export-pass" placeholder="••••">
+                <button class="btn btn-outline" style="margin-top:10px" onclick="exportData()">Download Spreadsheet (CSV)</button>
+            </div>
 
-    <!-- NAVIGATION BAR -->
+            <div class="card">
+                <h3>Manage Allergens</h3>
+                <div style="display:flex; gap:5px; margin-bottom:15px">
+                    <input type="text" id="new-allergen-input"><button class="btn btn-accent btn-small" onclick="addNewAllergen()">Add</button>
+                </div>
+                <div id="settings-allergen-list" class="allergen-wrap"></div>
+            </div>
+
+            <div class="card">
+                <h3>Danger Zone</h3>
+                <label>Enter Passcode to Wipe Data</label>
+                <input type="password" id="wipe-pass" placeholder="••••">
+                <button class="btn btn-danger" style="margin-top:10px" onclick="secureWipe()">Wipe All Data (Permanent)</button>
+            </div>
+        </section>
+
+        <!-- INVENTORY STEP -->
+        <section id="view-counting" class="view">
+            <div class="progress-bar"><div id="count-progress" class="progress-fill"></div></div>
+            <div class="card" style="text-align:center; padding: 50px 20px;">
+                <p id="count-unit-label" style="text-transform:uppercase; color:var(--accent); font-weight:800;"></p>
+                <h1 id="count-name">Item</h1>
+                <input type="number" id="count-input" class="big-input" inputmode="decimal">
+            </div>
+            <button class="btn btn-accent" onclick="nextCount()">Next</button>
+        </section>
+
+        <!-- REPORT VIEW -->
+        <section id="view-report" class="view">
+            <h1 id="report-title">Report</h1>
+            <div id="report-container"></div>
+            <button class="btn btn-accent" style="margin-top:20px" onclick="copyReport()">Copy Report</button>
+            <button class="btn btn-outline" style="margin-top:10px" onclick="showView('home')">Home</button>
+        </section>
+
+    </div>
+
     <nav class="bottom-nav">
         <button class="nav-btn active" onclick="showView('home', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Home</button>
-        <button class="nav-btn" onclick="showView('costing', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Costing</button>
+        <button class="nav-btn" onclick="showView('recipe', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Recipe</button>
         <button class="nav-btn" onclick="showView('master', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Master</button>
-        <button class="nav-btn" onclick="showView('settings', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
+        <button class="nav-btn" onclick="showView('settings', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
     </nav>
 </div>
 
@@ -198,6 +215,7 @@
     let tempRecipeIngs = [];
     let invState = { index: 0, items: [] };
     let editingRecipeId = null;
+    let editingIngId = null;
 
     function showView(id, btn) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -207,18 +225,38 @@
             btn.classList.add('active');
         }
         if(id === 'master') renderMaster();
-        if(id === 'costing') renderRecipes();
+        if(id === 'recipe') renderRecipes();
         if(id === 'home') renderHome();
         if(id === 'settings') renderSettings();
+        document.getElementById('main-scroller').scrollTop = 0;
     }
 
-    // MASTER
+    // --- MASTER LIST ---
     function renderMaster() {
         initAllergenPicker();
+        const search = document.getElementById('master-search').value.toLowerCase();
         const list = document.getElementById('master-items-list');
-        list.innerHTML = '<h3>Master List</h3>';
-        db.ings.sort((a,b) => a.name.localeCompare(b.name)).forEach(i => {
-            list.innerHTML += `<div class="card"><div class="list-row"><strong>${i.name}</strong><button onclick="deleteIng(${i.id})" style="border:none;background:none;color:var(--danger)">✕</button></div><div style="font-size:12px; color:var(--muted)">$${i.price} / ${i.size}${i.unit}</div><div class="allergen-wrap">${i.allergens.map(a => `<span class="tag">${a}</span>`).join('')}</div></div>`;
+        list.innerHTML = '';
+        
+        if (!search) {
+            list.innerHTML = '<p style="text-align:center; color:var(--muted); margin-top:20px;">Use search bar to view ingredients.</p>';
+            return;
+        }
+
+        const filtered = db.ings.filter(i => i.name.toLowerCase().includes(search));
+
+        if (!filtered.length) {
+            list.innerHTML = '<p style="text-align:center; color:var(--muted); margin-top:20px;">No matching ingredients found.</p>';
+            return;
+        }
+
+        filtered.sort((a,b) => a.name.localeCompare(b.name)).forEach(i => {
+            list.innerHTML += `
+                <div class="card clickable" onclick="editIng(${i.id})">
+                    <div class="list-row"><strong>${i.name}</strong><button onclick="event.stopPropagation(); deleteIng(${i.id})" style="border:none;background:none;color:var(--danger)">✕</button></div>
+                    <div style="font-size:12px; color:var(--muted)">$${i.price} / ${i.size}${i.unit}</div>
+                    <div class="allergen-wrap">${i.allergens.map(a => `<span class="tag">${a}</span>`).join('')}</div>
+                </div>`;
         });
     }
 
@@ -233,6 +271,37 @@
         });
     }
 
+    function editIng(id) {
+        editingIngId = id;
+        const i = db.ings.find(item => item.id === id);
+        document.getElementById('master-title').innerText = "Edit Ingredient";
+        document.getElementById('ing-name').value = i.name;
+        document.getElementById('ing-size').value = i.size;
+        document.getElementById('ing-unit').value = i.unit;
+        document.getElementById('ing-price').value = i.price;
+        document.getElementById('ing-par').value = i.par;
+        selectedAllergens = new Set(i.allergens);
+        initAllergenPicker();
+        document.getElementById('btn-ing-save').innerText = "Update Ingredient";
+        document.getElementById('btn-ing-cancel').style.display = "block";
+        document.getElementById('main-scroller').scrollTop = 0;
+    }
+
+    function cancelIngEdit() {
+        editingIngId = null;
+        document.getElementById('master-title').innerText = "Master List";
+        ['ing-name','ing-size','ing-price','ing-par'].forEach(id => {
+            document.getElementById(id).value = '';
+            document.getElementById(id).placeholder = ''; // Clear placeholders too
+        });
+        document.getElementById('master-search').value = ''; 
+        selectedAllergens.clear();
+        initAllergenPicker();
+        document.getElementById('btn-ing-save').innerText = "Save Ingredient";
+        document.getElementById('btn-ing-cancel').style.display = "none";
+        renderMaster();
+    }
+
     function addIngredient() {
         const name = document.getElementById('ing-name').value;
         const size = parseFloat(document.getElementById('ing-size').value);
@@ -240,15 +309,20 @@
         const unit = document.getElementById('ing-unit').value;
         const par = parseFloat(document.getElementById('ing-par').value);
         if(!name || isNaN(size) || isNaN(price)) return;
-        db.ings.push({ id: Date.now(), name, size, price, unit, par, allergens: Array.from(selectedAllergens) });
+        const ingData = { id: editingIngId || Date.now(), name, size, price, unit, par, allergens: Array.from(selectedAllergens) };
+        if(editingIngId) {
+            const idx = db.ings.findIndex(i => i.id === editingIngId);
+            db.ings[idx] = ingData;
+        } else {
+            db.ings.push(ingData);
+        }
         localStorage.setItem('k_ings', JSON.stringify(db.ings));
-        ['ing-name','ing-size','ing-price','ing-par'].forEach(id => document.getElementById(id).value = '');
-        selectedAllergens.clear(); renderMaster();
+        cancelIngEdit();
     }
 
     function deleteIng(id) { db.ings = db.ings.filter(i => i.id !== id); localStorage.setItem('k_ings', JSON.stringify(db.ings)); renderMaster(); }
 
-    // COSTING
+    // --- RECIPE LOGIC ---
     function toggleSalePrice() { document.getElementById('sale-price-wrap').style.display = document.getElementById('rec-is-sub').value === 'yes' ? 'none' : 'block'; }
 
     function openRecipeEditor(id = null) {
@@ -260,30 +334,44 @@
             document.getElementById('rec-yield').value = r.yield;
             document.getElementById('rec-is-sub').value = r.isSub ? 'yes' : 'no';
             document.getElementById('rec-sale').value = r.sale || '';
+            document.getElementById('rec-prep').value = r.prep || '';
             tempRecipeIngs = [...r.components];
         } else {
             document.getElementById('recipe-editor-title').innerText = "New Recipe";
-            ['rec-name','rec-yield','rec-sale'].forEach(id => document.getElementById(id).value = '');
+            ['rec-name','rec-yield','rec-sale','rec-prep','rec-ing-search','rec-ing-qty'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('rec-is-sub').value = 'no';
             tempRecipeIngs = [];
         }
         toggleSalePrice(); renderRecipeIngs(); showView('recipe-editor');
     }
 
-    function populateRecipeSelector() {
-        const sel = document.getElementById('rec-ing-select'); sel.innerHTML = '<option value="">-- Choose --</option>';
-        db.ings.sort((a,b) => a.name.localeCompare(b.name)).forEach(i => sel.innerHTML += `<option value="ing|${i.id}">${i.name}</option>`);
-        db.recs.filter(r => r.isSub).sort((a,b) => a.name.localeCompare(b.name)).forEach(r => sel.innerHTML += `<option value="rec|${r.id}">${r.name}</option>`);
+    function handleAutocomplete(input) {
+        const results = document.getElementById('autocomplete-results');
+        const term = input.value.toLowerCase();
+        if(!term) { results.style.display = 'none'; return; }
+        let matches = [];
+        db.ings.filter(i => i.name.toLowerCase().includes(term)).forEach(i => matches.push({ type: 'ing', id: i.id, name: i.name }));
+        db.recs.filter(r => r.isSub && r.name.toLowerCase().includes(term)).forEach(r => matches.push({ type: 'rec', id: r.id, name: r.name }));
+        if(!matches.length) { results.style.display = 'none'; return; }
+        results.innerHTML = matches.map(m => `<div class="autocomplete-item" onclick="selectAutocomplete('${m.type}', '${m.id}', '${m.name.replace(/'/g, "\\'")}')">${m.name} <small>(${m.type})</small></div>`).join('');
+        results.style.display = 'block';
+    }
+
+    function selectAutocomplete(type, id, name) {
+        document.getElementById('rec-ing-search').value = name;
+        document.getElementById('rec-ing-selected-val').value = `${type}|${id}`;
+        document.getElementById('autocomplete-results').style.display = 'none';
     }
 
     function addIngToRecipe() {
-        const sel = document.getElementById('rec-ing-select').value;
+        const val = document.getElementById('rec-ing-selected-val').value;
         const qty = parseFloat(document.getElementById('rec-ing-qty').value);
-        if(!sel || isNaN(qty)) return;
-        const [type, id] = sel.split('|');
+        if(!val || isNaN(qty)) return;
+        const [type, id] = val.split('|');
         const item = (type === 'ing') ? db.ings.find(i => i.id == id) : db.recs.find(r => r.id == id);
         tempRecipeIngs.push({ type, id, qty, name: item.name });
-        document.getElementById('rec-ing-qty').value = ''; renderRecipeIngs();
+        ['rec-ing-search','rec-ing-selected-val','rec-ing-qty'].forEach(id => document.getElementById(id).value = '');
+        renderRecipeIngs();
     }
 
     function renderRecipeIngs() {
@@ -298,34 +386,57 @@
         }, 0);
     }
 
+    function getRecipeAllergens(components) {
+        let set = new Set();
+        components.forEach(item => {
+            if(item.type === 'ing') {
+                const ing = db.ings.find(i => i.id == item.id);
+                ing?.allergens.forEach(a => set.add(a));
+            } else {
+                const sub = db.recs.find(r => r.id == item.id);
+                getRecipeAllergens(sub.components).forEach(a => set.add(a));
+            }
+        });
+        return Array.from(set);
+    }
+
     function saveRecipe() {
         const name = document.getElementById('rec-name').value;
         const y = parseFloat(document.getElementById('rec-yield').value) || 1;
         const isSub = document.getElementById('rec-is-sub').value === 'yes';
         if(!name || tempRecipeIngs.length === 0) return;
-        const data = { id: editingRecipeId || Date.now(), name, yield: y, isSub, sale: isSub ? 0 : parseFloat(document.getElementById('rec-sale').value), components: [...tempRecipeIngs] };
+        const data = { id: editingRecipeId || Date.now(), name, yield: y, isSub, sale: isSub ? 0 : parseFloat(document.getElementById('rec-sale').value), prep: document.getElementById('rec-prep').value, components: [...tempRecipeIngs] };
         if (editingRecipeId) { db.recs[db.recs.findIndex(r => r.id === editingRecipeId)] = data; } else { db.recs.push(data); }
-        localStorage.setItem('k_recs', JSON.stringify(db.recs)); showView('costing');
+        localStorage.setItem('k_recs', JSON.stringify(db.recs)); showView('recipe');
     }
 
     function renderRecipes() {
+        const search = document.getElementById('recipe-search').value.toLowerCase();
         const list = document.getElementById('recipe-list'); list.innerHTML = '';
-        db.recs.sort((a,b) => a.name.localeCompare(b.name)).forEach(r => {
+        db.recs.filter(r => r.name.toLowerCase().includes(search))
+        .sort((a,b) => a.name.localeCompare(b.name)).forEach(r => {
             const cost = calcCost(r.components) / (r.yield || 1);
             const fc = r.sale > 0 ? ((cost / r.sale) * 100).toFixed(1) : 'N/A';
             const high = r.sale > 0 && parseFloat(fc) > db.settings.targetFC;
-            list.innerHTML += `<div class="card clickable" onclick="openRecipeEditor(${r.id})" style="border-left: 5px solid ${r.isSub ? '#94a3b8' : (high ? 'var(--danger)' : 'var(--success)')}"><div class="list-row"><strong>${r.name}</strong><button onclick="event.stopPropagation(); deleteRec(${r.id})" style="border:none;background:none;color:var(--danger)">✕</button></div><div style="display:flex; justify-content:space-between; font-size:13px; margin-top:5px"><span>Cost/$: ${cost.toFixed(2)}</span><span>FC: ${fc}%</span></div></div>`;
+            const allergens = getRecipeAllergens(r.components);
+            list.innerHTML += `
+                <div class="card clickable" onclick="openRecipeEditor(${r.id})" style="border-left: 5px solid ${r.isSub ? '#94a3b8' : (high ? 'var(--danger)' : 'var(--success)')}">
+                    <div class="list-row"><strong>${r.name}</strong><button onclick="event.stopPropagation(); deleteRec(${r.id})" style="border:none;background:none;color:var(--danger)">✕</button></div>
+                    <div style="font-size:11px; color:var(--muted); margin-bottom:8px">Allergens: ${allergens.join(', ') || 'None'}</div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px"><span>Cost: ${cost.toFixed(2)}</span><span>FC: ${fc}%</span></div>
+                </div>`;
         });
     }
 
     function deleteRec(id) { db.recs = db.recs.filter(r => r.id !== id); localStorage.setItem('k_recs', JSON.stringify(db.recs)); renderRecipes(); }
 
-    // INVENTORY
+    function populateRecipeSelector() {}
+
+    // --- INVENTORY ---
     function startInventory() { if(!db.ings.length) return; invState.items = db.ings.map(i => ({...i, count: 0})); invState.index = 0; showView('counting'); renderCountStep(); }
     function renderCountStep() {
         const item = invState.items[invState.index];
         document.getElementById('count-progress').style.width = ((invState.index)/invState.items.length)*100 + '%';
-        document.getElementById('count-index').innerText = `Item ${invState.index+1} of ${invState.items.length}`;
         document.getElementById('count-name').innerText = item.name;
         document.getElementById('count-unit-label').innerText = item.unit;
         document.getElementById('count-input').value = ''; document.getElementById('count-input').focus();
@@ -333,7 +444,7 @@
     function nextCount() {
         invState.items[invState.index].count = parseFloat(document.getElementById('count-input').value) || 0;
         if(invState.index < invState.items.length - 1) { invState.index++; renderCountStep(); }
-        else { const report = { date: new Date().toLocaleString(), items: [...invState.items] }; db.hist.unshift(report); localStorage.setItem('k_hist', JSON.stringify(db.hist.slice(0,20))); renderReport(0); }
+        else { const h = { date: new Date().toLocaleString(), items: [...invState.items] }; db.hist.unshift(h); localStorage.setItem('k_hist', JSON.stringify(db.hist.slice(0,20))); renderReport(0); }
     }
     function renderReport(idx) {
         const h = db.hist[idx]; const list = h.items.filter(i => i.count < i.par);
@@ -341,20 +452,66 @@
         document.getElementById('report-container').innerHTML = list.length ? list.map(s => `<div class="card" style="border-left: 5px solid var(--danger)"><strong>${s.name}</strong><br>Stock: ${s.count} / Par: ${s.par}<br><span style="color:var(--danger); font-weight:700">Order: ${(s.par-s.count).toFixed(1)} ${s.unit}</span></div>`).join('') : "<p>No shortages!</p>";
         showView('report');
     }
-    function renderHome() {
-        const list = document.getElementById('home-history'); list.innerHTML = db.hist.length ? '' : '<p>No history.</p>';
-        db.hist.forEach((h, idx) => { const s = h.items.filter(i => i.count < i.par).length; list.innerHTML += `<div class="card clickable" onclick="renderReport(${idx})"><div style="display:flex; justify-content:space-between"><strong>${h.date}</strong><span class="tag" style="background:${s>0?'#fee2e2':'#d1fae5'}">${s} Short</span></div></div>`; });
+
+    function deleteHistory(idx) {
+        if (confirm("Delete this inventory report?")) {
+            db.hist.splice(idx, 1);
+            localStorage.setItem('k_hist', JSON.stringify(db.hist));
+            renderHome();
+        }
     }
 
-    // SETTINGS
+    function renderHome() {
+        const list = document.getElementById('home-history'); list.innerHTML = db.hist.length ? '' : '<p style="text-align:center; color:var(--muted); margin-top:20px;">No history available.</p>';
+        db.hist.forEach((h, idx) => { 
+            const sCount = h.items.filter(i => i.count < i.par).length; 
+            list.innerHTML += `
+                <div class="card clickable" onclick="renderReport(${idx})">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong>${h.date}</strong>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="tag" style="background:${sCount>0?'#fee2e2':'#d1fae5'}">${sCount} Short</span>
+                            <button class="del-icon" onclick="event.stopPropagation(); deleteHistory(${idx})">✕</button>
+                        </div>
+                    </div>
+                </div>`; 
+        });
+    }
+
+    // --- SETTINGS ---
     function renderSettings() {
         document.getElementById('setting-target-fc').value = db.settings.targetFC;
         const list = document.getElementById('settings-allergen-list'); list.innerHTML = '';
         db.allergens.forEach((a, i) => list.innerHTML += `<div class="allergen-tag selected" onclick="db.allergens.splice(${i},1); localStorage.setItem('k_aller',JSON.stringify(db.allergens)); renderSettings();">${a} ✕</div>`);
     }
     function addNewAllergen() { const v = document.getElementById('new-allergen-input').value; if(v) { db.allergens.push(v); localStorage.setItem('k_aller', JSON.stringify(db.allergens)); document.getElementById('new-allergen-input').value=''; renderSettings(); } }
-    function secureWipe() { if(prompt("Passcode:") === "2001") { localStorage.clear(); location.reload(); } }
-    function updateSettings() { db.settings.targetFC = parseFloat(document.getElementById('setting-target-fc').value); localStorage.setItem('k_set', JSON.stringify(db.settings)); }
+    
+    function secureWipe() {
+        const pass = document.getElementById('wipe-pass').value;
+        if(pass === "2001") { localStorage.clear(); location.reload(); } else { alert("Incorrect Passcode"); }
+    }
+
+    function updateSettings() {
+        db.settings.targetFC = parseFloat(document.getElementById('setting-target-fc').value);
+        localStorage.setItem('k_set', JSON.stringify(db.settings));
+        renderRecipes();
+    }
+
+    function exportData() {
+        const pass = document.getElementById('export-pass').value;
+        if(pass !== "2001") { alert("Incorrect Passcode"); return; }
+        let csv = "Type,Name,Yield/Size,Unit,Cost,SalePrice,FoodCost%\n";
+        db.ings.forEach(i => csv += `Ingredient,${i.name},${i.size},${i.unit},${(i.price/i.size).toFixed(2)},N/A,N/A\n`);
+        db.recs.forEach(r => {
+            const cost = calcCost(r.components) / (r.yield || 1);
+            const fc = r.sale > 0 ? ((cost / r.sale) * 100).toFixed(1) : 'N/A';
+            csv += `Recipe,${r.name},${r.yield},portions,${cost.toFixed(2)},${r.sale},${fc}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.setAttribute('hidden', ''); a.setAttribute('href', url); a.setAttribute('download', 'kitchen_pro_export.csv');
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
 
     function copyReport() {
         let txt = document.getElementById('report-title').innerText + "\n";
